@@ -16,11 +16,11 @@
 
       d3.testPlugin(charts, {
         'height': 250,
-        'width': 900});
+        'width': 900
+      });
 
       var chart1 = document.getElementById("chart1");
       setTimeout(function() {
-        console.log('building again');
         d3.testPlugin(chart1, "setData2");
         d3.testPlugin(chart1, "updateData");
       }, 2000);

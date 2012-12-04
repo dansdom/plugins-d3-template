@@ -31,7 +31,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'height': '930',
         'width': '960',
         'margin': {top: 30, right: 10, bottom: 30, left: 30},
-        'data' : null
+        'data' : null  // I'll need to figure out how I want to present data options to the user
     };
     
     // plugin functions go here
@@ -49,7 +49,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.data = this.opts.data.call();
             }
             else {
-                container.data = this.setData(20);
+                this.setData(20);
             }
             // define the scales and axis
             this.setScale();
@@ -148,7 +148,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var data = d3.range(num).map(function(i) {
                 return {x: i / (num-1), y: (Math.sin(i / 2) + 2) / 4};
             });
-            return data;
+            this.data = data;
         },
         setData2 : function() {
             var data = d3.range(50).map(function(i) {
@@ -175,6 +175,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .orient("left");
         },
         settings : function(settings) {
+            // I need to sort out whether I want to refresh the graph when the settings are changed
             var plugin = this;
             this.opts = Extend(true, {}, this.opts, settings);
             // the destroy/init will need to change to a transition event
