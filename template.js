@@ -38,8 +38,7 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
         init : function() {
             // going to need to define this, as there are some anonymous closures in this function.
             // something interesting to consider
-            var myObject = this; 
-
+            var container = this; 
 
             var margin = this.opts.margin,
                 width = this.opts.width - margin.right - margin.left,
@@ -63,9 +62,7 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
                 .orient("left")
                 .tickSize(0);
 
-            console.log(myObject.el);
-
-            myObject.chart = d3.select(myObject.el).append("svg")
+            container.chart = d3.select(container.el).append("svg")
                 .attr("width", width + margin.right + margin.left)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
@@ -81,7 +78,7 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
                 x.domain([0, d3.max(data, function(d) { return d.value; })]);
                 y.domain(data.map(function(d) { return d.name; }));
 
-                var bar = myObject.chart.selectAll("g.bar")
+                var bar = container.chart.selectAll("g.bar")
                     .data(data)
                     .enter().append("g")
                     .attr("class", "bar")
@@ -100,25 +97,30 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
                     .attr("text-anchor", "end")
                     .text(function(d) { return format(d.value); });
 
-                myObject.chart.append("g")
+                container.chart.append("g")
                     .attr("class", "x axis")
                     .call(xAxis);
 
-                myObject.chart.append("g")
+                container.chart.append("g")
                     .attr("class", "y axis")
                     .call(yAxis);
             });
         },
         settings : function(settings) {
+            var plugin = this;
             this.opts = Extend(true, {}, this.opts, settings);
+            // the destroy/init will need to change to a transition event
             this.destroy();
-            this.init();
-            this.el.setAttribute(this.namespace, true);
+            // why does this need a timeout? I wonder
+            setTimeout(function() {
+                plugin.init();
+                plugin.el.setAttribute(this.namespace, true);
+            }, 200); 
         },
         destroy : function() {
-            console.log(this.el);
             this.el.removeAttribute(this.namespace);
             this.el.removeChild(this.el.children[0]);
+            //debugger;
         }     
     };
     
