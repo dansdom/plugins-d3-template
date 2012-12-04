@@ -30,81 +30,149 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
     d3.TestPlugin.settings = {
         'height': '930',
         'width': '960',
-        'margin': {top: 30, right: 10, bottom: 10, left: 30}
+        'margin': {top: 30, right: 10, bottom: 30, left: 30},
+        'data' : null
     };
     
     // plugin functions go here
     d3.TestPlugin.prototype = {
         init : function() {
-            // going to need to define this, as there are some anonymous closures in this function.
-            // something interesting to consider
-            var container = this; 
 
-            var margin = this.opts.margin,
-                width = this.opts.width - margin.right - margin.left,
-                height = this.opts.height - margin.top - margin.bottom;
+            var container = this;
 
-            var format = d3.format(",.0f");
+            container.margin = this.opts.margin,
+            container.width = this.opts.width - container.margin.left - container.margin.right,
+            container.height = this.opts.height - container.margin.top - container.margin.bottom; 
 
-            var x = d3.scale.linear()
-                .range([0, width]);
+            // define the data for the graph
+            if (typeof this.opts.data == "function") {
+                container.data = this.opts.data.call();
+            }
+            else {
+                container.data = this.setData(20);
+            }
+            // define the scales and axis
+            this.setScale();
+            this.setAxis();
 
-            var y = d3.scale.ordinal()
-                .rangeRoundBands([0, height], .1);
+            // build the chart with the data
+            this.buildChart(container.data);
 
-            var xAxis = d3.svg.axis()
-                .scale(x)
-                .orient("top")
-                .tickSize(-height);
+        },
+        buildChart : function(data) {
 
-            var yAxis = d3.svg.axis()
-                .scale(y)
-                .orient("left")
-                .tickSize(0);
+            var container = this;
 
+            // create the svg element that holds the chart
             container.chart = d3.select(container.el).append("svg")
-                .attr("width", width + margin.right + margin.left)
-                .attr("height", height + margin.top + margin.bottom)
+                .datum(data)
+                .attr("width", container.width + container.margin.left + container.margin.right)
+                .attr("height", container.height + container.margin.top + container.margin.bottom)
                 .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                .attr("transform", "translate(" + container.margin.left + "," + container.margin.top + ")");
 
-            d3.csv("sample-data.csv", function(data) {
+            // add the X and Y axis
+            container.chart.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + container.height + ")")
+                .call(container.xAxis);
 
-                // Parse numbers, and sort by value.
-                data.forEach(function(d) { d.value = +d.value; });
-                data.sort(function(a, b) { return b.value - a.value; });
+            container.chart.append("g")
+                .attr("class", "y axis")
+                .call(container.yAxis);
 
-                // Set the scale domain.
-                x.domain([0, d3.max(data, function(d) { return d.value; })]);
-                y.domain(data.map(function(d) { return d.name; }));
+            // the 'd' here is the data object AHA!!!
+            // define the line of the chart
+            container.line = d3.svg.line()
+                .x(function(d) { return container.xScale(d.x); })
+                .y(function(d) { return container.yScale(d.y); });
+            // define the area that sits under the line
+            container.area = d3.svg.area()
+                .x(container.line.x())
+                .y1(container.line.y())
+                .y0(container.yScale(0));
 
-                var bar = container.chart.selectAll("g.bar")
-                    .data(data)
-                    .enter().append("g")
-                    .attr("class", "bar")
-                    .attr("transform", function(d) { return "translate(0," + y(d.name) + ")"; });
+            // add the line
+            container.chart.append("path")
+                .attr("class", "line")
+                .attr("d", container.line);
+            // add the area 
+            container.chart.append("path")
+                .attr("class", "area")
+                .attr("d", container.area);
+            
+            // add the dots to the line
+            container.chart.selectAll(".dot")
+                .data(data.filter(function(d) { return d.y; }))
+                .enter().append("circle")
+                .attr("class", "dot")
+                .attr("cx", container.line.x())
+                .attr("cy", container.line.y())
+                .attr("r", 3.5);
+        },
+        updateData : function() {
+            var container = this,
+                data = container.data;
 
-                bar.append("rect")
-                    .attr("width", function(d) { return x(d.value); })
-                    .attr("height", y.rangeBand());
+            // update the chart line with the new data
+            container.chart.selectAll("path.line")
+                .data([data])
+                .attr("d", container.line);
 
-                bar.append("text")
-                    .attr("class", "value")
-                    .attr("x", function(d) { return x(d.value); })
-                    .attr("y", y.rangeBand() / 2)
-                    .attr("dx", -3)
-                    .attr("dy", ".35em")
-                    .attr("text-anchor", "end")
-                    .text(function(d) { return format(d.value); });
-
-                container.chart.append("g")
-                    .attr("class", "x axis")
-                    .call(xAxis);
-
-                container.chart.append("g")
-                    .attr("class", "y axis")
-                    .call(yAxis);
+            // update the chart area with the new data
+            container.chart.selectAll("path.area")
+                .data([data])
+                .attr("d", container.area)
+            
+            // get the dots on the line
+            var circle = container.chart.selectAll(".dot").data(data, function(d) {return d;});
+            // add the new dots
+            circle.enter().append("circle")
+                .attr("class", "dot")
+                .attr("cx", container.line.x())
+                .attr("cy", -100)
+                .attr("r", 3.5)
+            // define the transition of the new circles
+              .transition()
+                .duration(1000)
+                .attr("cy", container.line.y())
+            // remove the old ones
+            circle.exit()
+              .transition(1000)
+                .duration(1000)
+                .attr("cy", 1000)
+                .remove()
+                
+        },
+        setData : function(num) {
+            var data = d3.range(num).map(function(i) {
+                return {x: i / (num-1), y: (Math.sin(i / 2) + 2) / 4};
             });
+            return data;
+        },
+        setData2 : function() {
+            var data = d3.range(50).map(function(i) {
+                return {x: i / (50-1), y: (Math.cos(i / 2) + 2) / 4};
+            });
+            this.data = data;
+        },
+        setScale : function(width, height) {
+            this.xScale = d3.scale.linear()
+                .domain([0, 1])
+                .range([0, this.width]);
+
+            this.yScale = d3.scale.linear()
+                .domain([0, 1])
+                .range([this.height, 0]);
+        },
+        setAxis : function() {
+            this.xAxis = d3.svg.axis()
+                .scale(this.xScale)
+                .orient("bottom");
+
+            this.yAxis = d3.svg.axis()
+                .scale(this.yScale)
+                .orient("left");
         },
         settings : function(settings) {
             var plugin = this;
