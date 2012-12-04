@@ -28,9 +28,9 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
     
     // these are the plugin default settings that will be over-written by user settings
     d3.TestPlugin.settings = {
-        'myBgColor': 'red',
-        'MyBorderColor': 'blue',
-        'boxHeight': '60px'
+        'height': '930',
+        'width': '960',
+        'margin': {top: 30, right: 10, bottom: 10, left: 30}
     };
     
     // plugin functions go here
@@ -41,9 +41,9 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
             var myObject = this; 
 
 
-            var margin = {top: 30, right: 10, bottom: 10, left: 30},
-                width = 960 - margin.right - margin.left,
-                height = 930 - margin.top - margin.bottom;
+            var margin = this.opts.margin,
+                width = this.opts.width - margin.right - margin.left,
+                height = this.opts.height - margin.top - margin.bottom;
 
             var format = d3.format(",.0f");
 
@@ -63,7 +63,9 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
                 .orient("left")
                 .tickSize(0);
 
-            var svg = d3.select("body").append("svg")
+            console.log(myObject.el);
+
+            myObject.chart = d3.select(myObject.el).append("svg")
                 .attr("width", width + margin.right + margin.left)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
@@ -79,7 +81,7 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
                 x.domain([0, d3.max(data, function(d) { return d.value; })]);
                 y.domain(data.map(function(d) { return d.name; }));
 
-                var bar = svg.selectAll("g.bar")
+                var bar = myObject.chart.selectAll("g.bar")
                     .data(data)
                     .enter().append("g")
                     .attr("class", "bar")
@@ -98,23 +100,25 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
                     .attr("text-anchor", "end")
                     .text(function(d) { return format(d.value); });
 
-                svg.append("g")
+                myObject.chart.append("g")
                     .attr("class", "x axis")
                     .call(xAxis);
 
-                svg.append("g")
+                myObject.chart.append("g")
                     .attr("class", "y axis")
                     .call(yAxis);
             });
         },
-        doSomething : function() {
-            console.log('doing shiz');
-        },
         settings : function(settings) {
             this.opts = Extend(true, {}, this.opts, settings);
+            this.destroy();
+            this.init();
+            this.el.setAttribute(this.namespace, true);
         },
         destroy : function() {
-            this.el[el.namespace].removeAttribute();
+            console.log(this.el);
+            this.el.removeAttribute(this.namespace);
+            this.el.removeChild(this.el.children[0]);
         }     
     };
     
@@ -142,13 +146,28 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
                 pluginInstance[options].apply(pluginInstance, args);
             }
         };
+
+        function initialisePlugin(el) {
+            // define the data object that is going to be attached to the DOM element that the plugin is being called on
+            // need to create a global data holding object. 
+            var pluginInstance = el[pluginName];
+            // if the plugin instance already exists then apply the options to it. I don't think I need to init again, but may have to on some plugins
+            if (pluginInstance) {
+                // going to need to set the options for the plugin here
+                pluginInstance.settings(options);
+            }
+            // initialise a new instance of the plugin
+            else {
+                el.setAttribute(pluginName, true);
+                // I think I need to anchor this new object to the DOM element and bind it
+                el[pluginName] = new d3.TestPlugin(options, el, callback);
+            }
+        };
         
         // if the argument is a string representing a plugin method then test which one it is
         if ( typeof options === 'string' ) {
-            console.log('is string');
             // define the arguments that the plugin function call may make 
             args = Array.prototype.slice.call(arguments, 2);
-            console.log(element);
             // iterate over each object that the function is being called upon
             if (element.length) {
                 for (var i = 0; i < element.length; i++) {
@@ -163,22 +182,14 @@ Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=arguments.l
         // initialise the function using the arguments as the plugin options
         else {
             // initialise each instance of the plugin
-            for (var i = 0; i < element.length; i++) {
-                // define the data object that is going to be attached to the DOM element that the plugin is being called on
-                // need to create a global data holding object. 
-                var pluginInstance = element[i][pluginName];
-                // if the plugin instance already exists then apply the options to it. I don't think I need to init again, but may have to on some plugins
-                if (pluginInstance) {
-                    // going to need to set the options for the plugin here
-                    pluginInstance.option(options);
+            if (element.length) {
+                for (var i = 0; i < element.length; i++) {
+                    initialisePlugin(element[i]);
                 }
-                // initialise a new instance of the plugin
-                else {
-                    element[i].setAttribute(pluginName, true);
-                    // I think I need to anchor this new object to the DOM element and bind it
-                    element[i][pluginName] = new d3.TestPlugin(options, this, callback);
-                }
-            };
+            }
+            else {
+                initialisePlugin(element);
+            }
         }
         return this;
     };
