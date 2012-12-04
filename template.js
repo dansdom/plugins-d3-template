@@ -49,7 +49,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.data = this.opts.data.call();
             }
             else {
-                this.setData(20);
+                this.setData(50);
             }
             // define the scales and axis
             this.setScale();
@@ -109,6 +109,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .attr("cx", container.line.x())
                 .attr("cy", container.line.y())
                 .attr("r", 3.5);
+            
         },
         updateData : function() {
             var container = this,
@@ -117,12 +118,16 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             // update the chart line with the new data
             container.chart.selectAll("path.line")
                 .data([data])
+                .transition()
+                .duration(2000)
                 .attr("d", container.line);
 
             // update the chart area with the new data
             container.chart.selectAll("path.area")
                 .data([data])
-                .attr("d", container.area)
+                .transition()
+                .duration(2000)
+                .attr("d", container.area); 
             
             // get the dots on the line
             var circle = container.chart.selectAll(".dot").data(data, function(d) {return d;});
@@ -130,18 +135,27 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             circle.enter().append("circle")
                 .attr("class", "dot")
                 .attr("cx", container.line.x())
-                .attr("cy", -100)
+                .attr("cy", container.line.y())
                 .attr("r", 3.5)
+                .style("stroke-opacity", 1e-6)
+                .style("fill-opacity", 1e-6)
             // define the transition of the new circles
               .transition()
-                .duration(1000)
+              .delay(1000)
+                .duration(500)
+                .attr("cx", container.line.x())
                 .attr("cy", container.line.y())
+                .style("stroke-opacity", 1)
+                .style("fill-opacity", 1)
+
             // remove the old ones
             circle.exit()
-              .transition(1000)
-                .duration(1000)
-                .attr("cy", 1000)
-                .remove()
+              .transition()
+                .duration(500)
+                //.attr("cy", 1000)
+                .style("stroke-opacity", 1e-6)
+                .style("fill-opacity", 1e-6)
+                .remove();
                 
         },
         setData : function(num) {
