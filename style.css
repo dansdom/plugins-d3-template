@@ -2,27 +2,24 @@ body {
   font: 10px sans-serif;
 }
 
-.bar rect {
-  fill: steelblue;
-}
-
-.bar text.value {
-  fill: white;
-}
-
-.axis {
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
   shape-rendering: crispEdges;
 }
 
-.axis path {
+.area {
+  fill: lightsteelblue;
+}
+
+.line {
   fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
 }
 
-.x.axis line {
-  stroke: #fff;
-  stroke-opacity: .8;
-}
-
-.y.axis path {
-  stroke: black;
+.dot {
+  fill: white;
+  stroke: steelblue;
+  stroke-width: 1.5px;
 }

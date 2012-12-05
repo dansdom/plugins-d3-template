@@ -42,7 +42,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             var container = this;
 
             container.margin = this.opts.margin,
-            container.width = this.opts.width - container.margin.left - container.margin.right,
+            container.width = this.opts.width - container.margin.left - container.margin.right;
             container.height = this.opts.height - container.margin.top - container.margin.bottom; 
 
             // define the data for the graph
@@ -274,6 +274,5 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         }
         return this;
     };
-
-    // end of module
+// end of module
 })(d3);
