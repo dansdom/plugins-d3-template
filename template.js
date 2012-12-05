@@ -31,7 +31,8 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         'height': '930',
         'width': '960',
         'margin': {top: 30, right: 10, bottom: 30, left: 30},
-        'data' : null  // I'll need to figure out how I want to present data options to the user
+        'data' : null,  // I'll need to figure out how I want to present data options to the user
+        'dataRequest' : function(){}  // should I let them specific a request function or do it for them?
     };
     
     // plugin functions go here
@@ -49,7 +50,7 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 container.data = this.opts.data.call();
             }
             else {
-                this.setData(50);
+                this.setData(30);
             }
             // define the scales and axis
             this.setScale();
@@ -81,16 +82,10 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .attr("class", "y axis")
                 .call(container.yAxis);
 
-            // the 'd' here is the data object AHA!!!
             // define the line of the chart
-            container.line = d3.svg.line()
-                .x(function(d) { return container.xScale(d.x); })
-                .y(function(d) { return container.yScale(d.y); });
+            container.line = this.getLine();
             // define the area that sits under the line
-            container.area = d3.svg.area()
-                .x(container.line.x())
-                .y1(container.line.y())
-                .y0(container.yScale(0));
+            container.area = this.getArea();
 
             // add the line
             container.chart.append("path")
@@ -108,8 +103,22 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .attr("class", "dot")
                 .attr("cx", container.line.x())
                 .attr("cy", container.line.y())
-                .attr("r", 3.5);
+                .attr("r", 3);
             
+        },
+        getLine : function() {
+            // the 'd' here is the data object AHA!!!
+            var container = this;
+            return d3.svg.line()
+                .x(function(d) { return container.xScale(d.x); })
+                .y(function(d) { return container.yScale(d.y); });
+        },
+        getArea : function() {
+            var container = this;
+            return d3.svg.area()
+                .x(container.line.x())
+                .y1(container.line.y())
+                .y0(container.yScale(0));
         },
         updateData : function() {
             var container = this,
@@ -164,12 +173,6 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
             });
             this.data = data;
         },
-        setData2 : function() {
-            var data = d3.range(50).map(function(i) {
-                return {x: i / (50-1), y: (Math.cos(i / 2) + 2) / 4};
-            });
-            this.data = data;
-        },
         setScale : function(width, height) {
             this.xScale = d3.scale.linear()
                 .domain([0, 1])
@@ -190,20 +193,13 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
         },
         settings : function(settings) {
             // I need to sort out whether I want to refresh the graph when the settings are changed
-            var plugin = this;
             this.opts = Extend(true, {}, this.opts, settings);
-            // the destroy/init will need to change to a transition event
-            this.destroy();
-            // why does this need a timeout? I wonder
-            setTimeout(function() {
-                plugin.init();
-                plugin.el.setAttribute(this.namespace, true);
-            }, 200); 
+            // will make custom function to handle setting changes
+            this.applySettings();
         },
         destroy : function() {
             this.el.removeAttribute(this.namespace);
             this.el.removeChild(this.el.children[0]);
-            //debugger;
         }     
     };
     
