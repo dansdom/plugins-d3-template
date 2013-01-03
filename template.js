@@ -191,11 +191,21 @@ var Extend = Extend || function(){var h,g,b,e,i,c=arguments[0]||{},f=1,k=argumen
                 .scale(this.yScale)
                 .orient("left");
         },
+        // gets data from a JSON request
+        getData : function() {
+            var container = this;
+            d3.json(container.opts.dataUrl, function(error, data) {
+                // data object
+                container.data = container.parseData(data);
+                container.updateChart();
+            });
+        },
+        // updates the settings of the chart
         settings : function(settings) {
             // I need to sort out whether I want to refresh the graph when the settings are changed
             this.opts = Extend(true, {}, this.opts, settings);
             // will make custom function to handle setting changes
-            this.applySettings();
+            this.getData();
         },
         destroy : function() {
             this.el.removeAttribute(this.namespace);
